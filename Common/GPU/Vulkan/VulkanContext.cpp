@@ -11,6 +11,7 @@
 #include "Common/GPU/Shader.h"
 #include "Common/GPU/Vulkan/VulkanContext.h"
 #include "Common/GPU/Vulkan/VulkanDebug.h"
+#include "Common/GPU/Vulkan/EasypspDrm.h"   // EASYPSP_DRM_IMPL
 #include "Common/StringUtils.h"
 
 #ifdef USE_CRT_DBG
@@ -663,6 +664,12 @@ VkResult VulkanContext::CreateDevice(int physical_device) {
 
 #if !PPSSPP_PLATFORM(MAC) && !PPSSPP_PLATFORM(IOS)
 	extensionsLookup_.GOOGLE_display_timing = EnableDeviceExtension(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME, 0);
+	if (EasypspDrm_Active()) {   // EASYPSP_DRM_EXT: import of DRM dma-bufs
+		for (const char *name : { "VK_KHR_external_memory_fd", "VK_EXT_external_memory_dma_buf", "VK_EXT_image_drm_format_modifier", "VK_EXT_queue_family_foreign" }) {
+			if (!EnableDeviceExtension(name, 0))
+				ERROR_LOG(Log::G3D, "EASYPSP_DRM missing device extension %s", name);
+		}
+	}
 #endif
 	if (!extensionsLookup_.GOOGLE_display_timing) {
 		extensionsLookup_.KHR_present_id = EnableDeviceExtension(VK_KHR_PRESENT_ID_EXTENSION_NAME, 0);
@@ -1019,6 +1026,11 @@ VkResult VulkanContext::ReinitSurface() {
 #if defined(VK_USE_PLATFORM_DISPLAY_KHR)
 	case WINDOWSYSTEM_DISPLAY:
 	{
+		if (EasypspDrm_Active()) {   // EASYPSP_DRM_SURFACE: fake surface, presented by EasypspDrm.h
+			surface_ = EasypspDrm_Surface();
+			retval = VK_SUCCESS;
+			break;
+		}
 		VkDisplaySurfaceCreateInfoKHR display{ VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR };
 #if !defined(__LIBRETRO__)
 		/*

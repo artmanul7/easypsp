@@ -51,6 +51,7 @@ using namespace std::placeholders;
 #endif
 #include "Core/Config.h"
 #include "Core/ConfigValues.h"
+#include "UI/EasypspBright.h"   // EASYPSP_EMU_INC
 #include "Core/CoreTiming.h"
 #include "Core/CoreParameter.h"
 #include "Core/Core.h"
@@ -754,6 +755,18 @@ void EmuScreen::OnVKey(VirtKey virtualKeyCode, bool down) {
 
 	auto sc = GetI18NCategory(I18NCat::SCREEN);
 	auto mc = GetI18NCategory(I18NCat::MAPPABLECONTROLS);
+
+	// EASYPSP_HOTKEYS: Select+F quits at once (as EasyCast), Select+Up/Down = brightness of the game panel
+	if (virtualKeyCode == VIRTKEY_EXIT_APP) {
+		if (down)
+			System_ExitApp();
+		return;
+	}
+	if (virtualKeyCode == VIRTKEY_EASYPSP_BRIGHT_UP || virtualKeyCode == VIRTKEY_EASYPSP_BRIGHT_DOWN) {
+		if (down)
+			easypsp_bright::step(virtualKeyCode == VIRTKEY_EASYPSP_BRIGHT_UP ? 1 : -1);
+		return;
+	}
 
 	switch (virtualKeyCode) {
 	case VIRTKEY_FASTFORWARD:

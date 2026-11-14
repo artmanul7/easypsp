@@ -525,6 +525,10 @@ public:
 	// Sets whether combo mapping is enabled.
 	bool bAllowMappingCombos;
 	bool bStrictComboOrder;
+	// EASYPSP_CONFIG
+	int iEasypspScreen = 0;            // 0 = top panel, 1 = bottom (restart)
+	int iEasypspBrightness = 0;        // % of the game panel maximum, 0 = system value
+	bool bEasypspSwapDpadStick = false;
 
 	bool bMouseControl;
 	bool bMouseConfine; // Trap inside the window.

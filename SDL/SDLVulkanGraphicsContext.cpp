@@ -17,6 +17,7 @@
 #include "SDL_vulkan.h"
 #endif
 #include "SDLVulkanGraphicsContext.h"
+#include "Common/GPU/Vulkan/EasypspDrmApi.h"   // EASYPSP_DRM_SDL
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
 #include "SDLCocoaMetalLayer.h"
@@ -50,6 +51,9 @@ bool SDLVulkanGraphicsContext::Init(SDL_Window *&window, int x, int y, int w, in
 		return false;
 	}
 
+	// EASYPSP_DRM_OPEN: take the DRM master of the chosen panel before the Mali driver starts
+	if (EasypspDrm_Wanted() && !EasypspDrm_Open(g_Config.iEasypspScreen))
+		fprintf(stderr, "EASYPSP_DRM could not open the panel, falling back to VK_KHR_display\n");
 	vulkan_ = new VulkanContext();
 
 	VulkanContext::CreateInfo info{};
@@ -163,6 +167,7 @@ void SDLVulkanGraphicsContext::Shutdown() {
 	vulkan_->DestroyInstance();
 	delete vulkan_;
 	vulkan_ = nullptr;
+	EasypspDrm_Close();   // EASYPSP_DRM_CLOSE
 	finalize_glslang();
 }
 

@@ -24,6 +24,7 @@
 #include "Core/Config.h"
 #include "Common/Data/Format/JSONReader.h"
 #include "Common/GPU/Vulkan/VulkanLoader.h"
+#include "Common/GPU/Vulkan/EasypspDrmApi.h"   // EASYPSP_DRM_FN
 #include "Common/Log.h"
 #include "Common/StringUtils.h"
 #include "Common/System/System.h"
@@ -739,6 +740,7 @@ void VulkanLoadInstanceFunctions(VkInstance instance, const VulkanExtensions &en
 #endif
 
 	LOAD_INSTANCE_FUNC(instance, vkDestroySurfaceKHR);
+	::EasypspDrm_InstallInstanceFunctions();   // EASYPSP_DRM_INSTALL
 
 	if (enabledExtensions.KHR_get_physical_device_properties2) {
 		LOAD_INSTANCE_FUNC_CORE(instance, vkGetPhysicalDeviceProperties2, vkGetPhysicalDeviceProperties2KHR, VK_API_VERSION_1_1);

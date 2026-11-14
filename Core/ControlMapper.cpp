@@ -12,6 +12,9 @@
 #include "Core/Config.h"
 #include "Core/CoreParameter.h"
 #include "Core/System.h"
+#include <set>
+namespace KeyMap { extern KeyMapping g_controllerMap; }   // EASYPSP_CHORD_DECL
+static std::set<InputMapping> g_easypspChordPrev;
 
 using KeyMap::MultiInputMapping;
 
@@ -325,7 +328,7 @@ static bool IsSwappableVKey(uint32_t vkey) {
 }
 
 void ControlMapper::SwapMappingIfEnabled(uint32_t *vkey) {
-	if (swapAxes_ || IsVirtKeyOn(VIRTKEY_AXIS_SWAP_HOLD)) {
+	if ((swapAxes_ != g_Config.bEasypspSwapDpadStick) || IsVirtKeyOn(VIRTKEY_AXIS_SWAP_HOLD)) {   // EASYPSP_SWAP
 		switch (*vkey) {
 		case CTRL_UP: *vkey = VIRTKEY_AXIS_Y_MAX; break;
 		case VIRTKEY_AXIS_Y_MAX: *vkey = CTRL_UP; break;
@@ -354,6 +357,32 @@ bool ControlMapper::UpdatePSPState(const InputMapping &changedMapping, double no
 	case ROTATION_LOCKED_VERTICAL180:   rotations = 3; break;
 	}
 
+	// EASYPSP_CHORD: inputs of a fully held combo do not also act as single-input mappings.
+	std::set<InputMapping> chordHeld;
+	for (auto &kv : KeyMap::g_controllerMap) {
+		for (auto &mm : kv.second) {
+			if (mm.mappings.size() < 2)
+				continue;
+			bool held = true;
+			for (const auto &m : mm.mappings) {
+				auto it = curInput_.find(m);
+				if (it == curInput_.end() || !(it->second.value > 0.0f && it->second.value > GetDeviceAxisThreshold(it->first.deviceId, m))) {
+					held = false;
+					break;
+				}
+			}
+			if (held) {
+				for (const auto &m : mm.mappings)
+					chordHeld.insert(m);
+			}
+		}
+	}
+	std::set<InputMapping> chordTouched = chordHeld;
+	chordTouched.insert(g_easypspChordPrev.begin(), g_easypspChordPrev.end());
+	g_easypspChordPrev = chordHeld;
+	auto easypspSingleHeld = [&](const auto &mm) { return mm.mappings.size() == 1 && chordHeld.count(mm.mappings[0]) > 0; };
+	auto easypspSingleTouched = [&](const auto &mm) { return mm.mappings.size() == 1 && chordTouched.count(mm.mappings[0]) > 0; };
+
 	// For the PSP's digital button inputs, we just go through and put the flags together.
 	uint32_t buttonMask = 0;
 	uint32_t changedButtonMask = 0;
@@ -377,11 +406,11 @@ bool ControlMapper::UpdatePSPState(const InputMapping &changedMapping, double no
 		// If a mapping could consist of a combo, we could trivially check it here.
 		for (auto &multiMapping : inputMappings) {
 			// Check if the changed mapping was involved in this PSP key.
-			if (multiMapping.mappings.contains(changedMapping)) {
+			if (multiMapping.mappings.contains(changedMapping) || easypspSingleTouched(multiMapping)) {   // EASYPSP_CHORD_BTN
 				changedButtonMask |= mask;
 			}
 			// Check if all inputs are "on".
-			bool all = true;
+			bool all = !easypspSingleHeld(multiMapping);
 			double curTime = 0.0;
 			for (const auto &mapping : multiMapping.mappings) {
 				auto iter = curInput_.find(mapping);
@@ -432,11 +461,11 @@ bool ControlMapper::UpdatePSPState(const InputMapping &changedMapping, double no
 		bool touchedByMapping = false;
 		float value = 0.0f;
 		for (auto &multiMapping : inputMappings) {
-			if (multiMapping.mappings.contains(changedMapping)) {
+			if (multiMapping.mappings.contains(changedMapping) || easypspSingleTouched(multiMapping)) {   // EASYPSP_CHORD_VK
 				touchedByMapping = true;
 			}
 
-			float product = 1.0f;  // We multiply the various inputs in a combo mapping with each other.
+			float product = easypspSingleHeld(multiMapping) ? 0.0f : 1.0f;   // EASYPSP_CHORD_PRODUCT  // We multiply the various inputs in a combo mapping with each other.
 			double curTime = 0.0;
 			for (auto mapping : multiMapping.mappings) {
 				auto iter = curInput_.find(mapping);

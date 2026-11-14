@@ -1937,6 +1937,11 @@ int main(int argc, char *argv[]) {
 
 	// If a restart was requested (and supported on this platform), respawn the executable.
 	if (g_RestartRequested) {
+		// EASYPSP_RESTART: let the launcher start a fresh process
+		if (const char *code = getenv("EASYPSP_RESTART_CODE")) {
+			fprintf(stderr, "EASYPSP_RESTART exit %s\n", code);
+			return atoi(code);
+		}
 #if PPSSPP_PLATFORM(MAC)
 		RestartMacApp();
 #elif PPSSPP_PLATFORM(LINUX)

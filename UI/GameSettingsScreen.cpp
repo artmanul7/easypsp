@@ -43,6 +43,8 @@
 #include "Common/UI/PopupScreens.h"
 #include "UI/EmuScreen.h"
 #include "UI/GameSettingsScreen.h"
+#include "UI/EasypspBright.h"   // EASYPSP_SET_INC
+#include "UI/EasypspUpdate.h"   // EASYPSP_UPD_INC
 #include "UI/GameInfoCache.h"
 #include "UI/GamepadEmu.h"
 #include "UI/ControlMappingScreen.h"
@@ -299,6 +301,18 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 	auto dev = GetI18NCategory(I18NCat::DEVELOPER);
 
 	using namespace UI;
+
+	// EASYPSP_SETTINGS
+	graphicsSettings->Add(new ItemHeader("EasyPSP"));
+	static const char *easypspScreens[] = { "Top", "Bottom" };
+	PopupMultiChoice *easypspScreen = graphicsSettings->Add(new PopupMultiChoice(&g_Config.iEasypspScreen, "Screen (restarts EasyPSP)", easypspScreens, 0, ARRAY_SIZE(easypspScreens), I18NCat::GRAPHICS, screenManager()));
+	easypspScreen->OnChoice.Add([this](UI::EventParams &) {
+		TriggerRestart("EasypspScreen", editGameSpecificThenRestore_, gamePath_);
+	});
+	PopupSliderChoice *easypspBright = graphicsSettings->Add(new PopupSliderChoice(&g_Config.iEasypspBrightness, 0, 100, 0, "Screen brightness (0 = system)", 5, screenManager(), "%"));
+	easypspBright->OnChange.Add([](UI::EventParams &) {
+		easypsp_bright::apply(g_Config.iEasypspBrightness);
+	});
 
 	graphicsSettings->Add(new ItemHeader(gr->T("Rendering Mode")));
 
@@ -831,6 +845,7 @@ void GameSettingsScreen::CreateControlsSettings(UI::ViewGroup *controlsSettings)
 	controlsSettings->Add(new Choice(co->T("Calibrate analog stick")))->OnClick.Add([this](UI::EventParams &e) {
 		screenManager()->push(new AnalogCalibrationScreen(gamePath_));
 	});
+	controlsSettings->Add(new CheckBox(&g_Config.bEasypspSwapDpadStick, "Swap D-Pad and analog stick"));   // EASYPSP_SWAP_UI
 
 #if defined(USING_WIN_UI) || (PPSSPP_PLATFORM(LINUX) && !PPSSPP_PLATFORM(ANDROID))
 	controlsSettings->Add(new CheckBox(&g_Config.bSystemControls, co->T("Enable standard shortcut keys")));
@@ -1178,6 +1193,21 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	auto vr = GetI18NCategory(I18NCat::VR);
 	auto th = GetI18NCategory(I18NCat::THEMES);
 	auto psps = GetI18NCategory(I18NCat::PSPSETTINGS);  // TODO: Should move more into this section.
+
+	// EASYPSP_UPDATES
+	systemSettings->Add(new ItemHeader("EasyPSP " + easypsp_update::current()));
+	systemSettings->Add(new ChoiceWithCallbackValueDisplay("Updates", []() { return easypsp_update::status(); }))->OnClick.Add([](UI::EventParams &) {
+		easypsp_update::run("--check");
+	});
+	Choice *easypspCheck = systemSettings->Add(new Choice("Check for updates"));
+	easypspCheck->OnClick.Add([](UI::EventParams &) { easypsp_update::run("--check"); });
+	easypspCheck->SetEnabledFunc([]() { return easypsp_update::tool() != nullptr && !easypsp_update::state().busy; });
+	Choice *easypspInstall = systemSettings->Add(new Choice("Install the new version"));
+	easypspInstall->OnClick.Add([](UI::EventParams &) { easypsp_update::run("--install"); });
+	easypspInstall->SetEnabledFunc([]() { return !easypsp_update::state().busy && easypsp_update::result() == "newer"; });
+	Choice *easypspRestart = systemSettings->Add(new Choice("Restart EasyPSP (starts the new version)"));
+	easypspRestart->OnClick.Add([this](UI::EventParams &) { TriggerRestart("EasypspUpdate", false, Path()); });
+	easypspRestart->SetEnabledFunc([]() { return !easypsp_update::state().busy && easypsp_update::result() == "installed"; });
 
 	systemSettings->Add(new ItemHeader(sy->T("UI")));
 

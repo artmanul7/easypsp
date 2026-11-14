@@ -527,6 +527,8 @@ const KeyMap_IntStrPair psp_button_names[] = {
 
 	{VIRTKEY_TOGGLE_WLAN, "Toggle WLAN"},
 	{VIRTKEY_EXIT_APP, "Exit App"},
+	{VIRTKEY_EASYPSP_BRIGHT_UP, "EasyPSP Brightness Up"},   // EASYPSP_VKEY_NAMES
+	{VIRTKEY_EASYPSP_BRIGHT_DOWN, "EasyPSP Brightness Down"},
 
 	{VIRTKEY_TOGGLE_MOUSE, "Toggle mouse input"},
 	{VIRTKEY_TOGGLE_TOUCH_CONTROLS, "Toggle touch controls"},

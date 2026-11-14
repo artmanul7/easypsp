@@ -41,6 +41,7 @@
 #include "UI/BackgroundAudio.h"
 #include "UI/EmuScreen.h"
 #include "UI/MainScreen.h"
+#include "UI/EasypspUpdate.h"   // EASYPSP_UPD_MAININC
 #include "UI/GameScreen.h"
 #include "UI/GameInfoCache.h"
 #include "UI/GameSettingsScreen.h"
@@ -119,6 +120,7 @@ static bool IsTempPath(const Path &str) {
 
 MainScreen::MainScreen() {
 	g_BackgroundAudio.SetGame(Path());
+	easypsp_update::notifyNewer();   // EASYPSP_UPD_NOTICE
 }
 
 MainScreen::~MainScreen() {

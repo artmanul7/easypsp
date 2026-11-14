@@ -784,6 +784,8 @@ static const ConfigSetting graphicsSettings[] = {
 	ConfigSetting("LogFrameDrops", SETTING(g_Config, bLogFrameDrops), false, CfgFlag::DEFAULT),
 
 	ConfigSetting("InflightFrames", SETTING(g_Config, iInflightFrames), 3, CfgFlag::DEFAULT),
+	ConfigSetting("EasypspScreen", SETTING(g_Config, iEasypspScreen), 0, CfgFlag::DEFAULT),   // EASYPSP_CFG_GFX
+	ConfigSetting("EasypspBrightness", SETTING(g_Config, iEasypspBrightness), 0, CfgFlag::DEFAULT),
 	ConfigSetting("RenderDuplicateFrames", SETTING(g_Config, bRenderDuplicateFrames), false, CfgFlag::PER_GAME),
 
 	ConfigSetting("MultiThreading", SETTING(g_Config, bRenderMultiThreading), true, CfgFlag::DEFAULT),
@@ -1029,6 +1031,7 @@ static const ConfigSetting controlSettings[] = {
 
 	ConfigSetting("AllowMappingCombos", SETTING(g_Config, bAllowMappingCombos), false, CfgFlag::DEFAULT),
 	ConfigSetting("StrictComboOrder", SETTING(g_Config, bStrictComboOrder), false, CfgFlag::DEFAULT),
+	ConfigSetting("EasypspSwapDpadStick", SETTING(g_Config, bEasypspSwapDpadStick), false, CfgFlag::DEFAULT),   // EASYPSP_CFG_CTL
 
 	ConfigSetting("UseMouse", SETTING(g_Config, bMouseControl), false, CfgFlag::PER_GAME),
 	ConfigSetting("ConfineMap", SETTING(g_Config, bMouseConfine), false, CfgFlag::PER_GAME),
